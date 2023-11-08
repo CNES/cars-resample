@@ -89,43 +89,39 @@ void bicubicFiltering(const double accurateRowIn,
     std::vector<double> interpCol(5*nbBands, 0.0);
     
     // interpolation along row direction : input 5x5 => output 5x1
-    for ( int neighRowIn = -2; neighRowIn <= 2; ++neighRowIn ) {
-      rowIn = filterCenterRow + neighRowIn;
-      if (rowIn < 0) {
-	// mirror: rowIn = -rowIn + 1;
-	rowIn = 0;
-      }
-      else if (rowIn >= nbRowsIn){
-	// mirror: rowIn = nbRowsIn - 1 + (nbRowsIn - rowIn) - 1;
-	rowIn = nbRowsIn - 1;
-      }
-      
-      for ( int neighColIn = -2; neighColIn <= 2; ++neighColIn ) {
-	colIn = filterCenterCol + neighColIn;
-	
-	if (colIn < 0) {
-	  // mirror: colIn = -colIn + 1;
-	  colIn = 0;
-	}
-	else if (colIn >= nbColsIn){
-	  // mirror: colIn = nbColsIn - 1 + (nbColsIn - colIn) - 1;
-	  colIn = nbColsIn-1;
-	}
-	
-	kIn = rowIn * nbColsIn + colIn;
-	for ( long int b = 0; b < nbBands ; ++b) {    
-	  interpCol[(neighRowIn+2)+b*5] += weightsCol[2-neighColIn]*sourceVector[kIn + b*sizeIn]; 
-	}
-      }
-    }
-    
-    // interpolation along col direction : input 5x1 => output 1x1
-    for ( long int b = 0; b < nbBands ; ++b) {
-      double targetValue = 0;
+    for (long int b = 0; b < nbBands; ++b) {
       for ( int neighRowIn = -2; neighRowIn <= 2; ++neighRowIn ) {
-      	targetValue += weightsRow[2-neighRowIn]*interpCol[(neighRowIn+2)+b*5];
+        rowIn = filterCenterRow + neighRowIn;
+        if (rowIn < 0) {
+  	// mirror: rowIn = -rowIn + 1;
+  	rowIn = 0;
+        }
+        else if (rowIn >= nbRowsIn){
+  	// mirror: rowIn = nbRowsIn - 1 + (nbRowsIn - rowIn) - 1;
+  	rowIn = nbRowsIn - 1;
+        }
+        
+        for ( int neighColIn = -2; neighColIn <= 2; ++neighColIn ) {
+  	  colIn = filterCenterCol + neighColIn;
+	
+	  if (colIn < 0) {
+	    // mirror: colIn = -colIn + 1;
+	    colIn = 0;
+	  }
+	  else if (colIn >= nbColsIn){
+	    // mirror: colIn = nbColsIn - 1 + (nbColsIn - colIn) - 1;
+	    colIn = nbColsIn-1;
+	  }
+	
+          kIn = rowIn * nbColsIn + colIn;
+          interpCol[(neighRowIn + 2) + b * 5] +=
+              weightsCol[2 - neighColIn] * sourceVector[kIn + b * sizeIn];
+        }
+
+        // interpolation along col direction : input 5x1 => output 1x1
+        targetVector[kOut + b * sizeOut] +=
+            weightsRow[2 - neighRowIn] * interpCol[(neighRowIn + 2) + b * 5];
       }
-      targetVector[kOut+b*sizeOut] = targetValue;
     }
   }
 }
