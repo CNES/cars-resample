@@ -91,28 +91,21 @@ void bicubicFiltering(const double accurateRowIn,
     // interpolation along row direction : input 5x5 => output 5x1
     for ( int neighRowIn = -2; neighRowIn <= 2; ++neighRowIn ) {
       rowIn = filterCenterRow + neighRowIn;
-      if (rowIn < 0) {
-	// mirror: rowIn = -rowIn + 1;
-	rowIn = 0;
-      }
-      else if (rowIn >= nbRowsIn){
-	// mirror: rowIn = nbRowsIn - 1 + (nbRowsIn - rowIn) - 1;
-	rowIn = nbRowsIn - 1;
-      }
-      
+
+      // mirror: rowIn = -rowIn + 1;
+      rowIn = (rowIn < 0) ? 0 : rowIn;
+      // mirror: rowIn = nbRowsIn - 1 + (nbRowsIn - rowIn) - 1;
+      rowIn = (rowIn >= nbRowsIn) ? nbRowsIn - 1 : rowIn;
+
       for ( int neighColIn = -2; neighColIn <= 2; ++neighColIn ) {
 	colIn = filterCenterCol + neighColIn;
-	
-	if (colIn < 0) {
-	  // mirror: colIn = -colIn + 1;
-	  colIn = 0;
-	}
-	else if (colIn >= nbColsIn){
-	  // mirror: colIn = nbColsIn - 1 + (nbColsIn - colIn) - 1;
-	  colIn = nbColsIn-1;
-	}
-	
-	kIn = rowIn * nbColsIn + colIn;
+
+        // mirror: colIn = -colIn + 1;
+        colIn = (colIn < 0) ? 0 : colIn;
+        // mirror: colIn = nbColsIn - 1 + (nbColsIn - colIn) - 1;
+        colIn = (colIn >= nbColsIn) ? nbColsIn - 1 : colIn;
+
+        kIn = rowIn * nbColsIn + colIn;
 	for ( long int b = 0; b < nbBands ; ++b) {    
 	  interpCol[(neighRowIn+2)+b*5] += weightsCol[2-neighColIn]*sourceVector[kIn + b*sizeIn]; 
 	}
