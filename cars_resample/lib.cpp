@@ -154,7 +154,7 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
 
   long int rowGrid = 0, colGrid = 0; // WDL Propal
   long int colAlpha = 0, rowAlpha = 0; // WDL Propal
-  long int kGrid1, kGrid2, kGrid3, kGrid4;
+  long int kGrid1 = 0, kGrid2 = 1, kGrid3 = nbColsGrid + 1, kGrid4 = nbColsGrid; // WDL Propal
   long int rowOut = 0, colOut = 0; // WDL Propal
 
   void (*filtering)(const double,
@@ -175,7 +175,6 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     filtering = &nearestFiltering;
   }
   for ( long int kOut = 0 ; kOut < sizeOut  ; ++kOut ) {
-
     // 1. bilinear grid interpolation with oversampling
 
     // retrieve grid coordinates
@@ -186,10 +185,10 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     // rowGrid = rowOut / oversampling;
 
     // get 4 involved pixels
-    kGrid1 = colGrid + rowGrid * nbColsGrid;
-    kGrid2 = (colGrid+1) + rowGrid * nbColsGrid;
-    kGrid3 = (colGrid+1) + (rowGrid+1) * nbColsGrid;
-    kGrid4 = colGrid + (rowGrid+1) * nbColsGrid;
+//     kGrid1 = colGrid + rowGrid * nbColsGrid;
+//     kGrid2 = (colGrid+1) + rowGrid * nbColsGrid;
+//     kGrid3 = (colGrid+1) + (rowGrid+1) * nbColsGrid;
+//     kGrid4 = colGrid + (rowGrid+1) * nbColsGrid;
 
     // alpha factor to weight pixels 
     // colAlpha = colOut % oversampling; // WDL 
@@ -221,6 +220,10 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     if (colAlpha == oversampling) {
       colAlpha = 0;
       colGrid++;
+      kGrid1++;
+      kGrid2++;
+      kGrid3++;
+      kGrid4++;
     }
     colOut++;
     if (colOut == nbColsOut) {
@@ -233,6 +236,10 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
         rowAlpha = 0;
         rowGrid++;
       }
+      kGrid1 = colGrid + rowGrid * nbColsGrid;
+      kGrid2 = kGrid1 + 1;
+      kGrid4 = kGrid1 + nbColsGrid;
+      kGrid3 = kGrid4 + 1;
     }
     /** END : WDL Propal */
   }
