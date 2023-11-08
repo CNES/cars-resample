@@ -174,14 +174,14 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
   else {
     filtering = &nearestFiltering;
   }
-
-  for ( long int kOut = 0 ; kOut < sizeOut ; ++kOut ) {
+  colOut = rowOut = 0; // WDL Propal
+  for ( long int kOut = 0 ; kOut < sizeOut  ; ++kOut ) {
 
     // 1. bilinear grid interpolation with oversampling
 
     // retrieve grid coordinates
-    colOut = kOut % nbColsOut;
-    rowOut = kOut / nbColsOut;
+    // colOut = kOut % nbColsOut; // WDL 
+    // rowOut = kOut / nbColsOut;
 
     colGrid = colOut / oversampling;
     rowGrid = rowOut / oversampling;
@@ -216,6 +216,13 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     // 2. filtering (nearest or bicubic)
     filtering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
 	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
+
+    /** WDL Propal */
+    colOut++;
+    if (colOut == nbColsOut) {
+      colOut = 0;
+      rowOut++;
+    }
   }
   
   return targetVector;
