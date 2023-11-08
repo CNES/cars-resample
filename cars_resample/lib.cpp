@@ -152,10 +152,13 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
 
   double accurateRowIn, accurateColIn;
 
-  long int rowGrid = 0, colGrid = 0; // WDL Propal
-  long int colAlpha = 0, rowAlpha = 0; // WDL Propal
-  long int kGrid1 = 0, kGrid2 = 1, kGrid3 = nbColsGrid + 1, kGrid4 = nbColsGrid; // WDL Propal
-  long int rowOut = 0, colOut = 0; // WDL Propal
+  long int rowGrid = 0, colGrid = 0;
+  long int colAlpha = 0, rowAlpha = 0;
+  long int kGrid1 = 0, kGrid2 = 1, kGrid3 = nbColsGrid + 1, kGrid4 = nbColsGrid;
+  long int rowOut = 0, colOut = 0;
+  double osP2 = (double)(oversampling * oversampling);
+  long os_colA = (oversampling - colAlpha);
+  long os_rowA = (oversampling - rowAlpha);
 
   void (*filtering)(const double,
 		    const double,
@@ -175,37 +178,27 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     filtering = &nearestFiltering;
   }
   for ( long int kOut = 0 ; kOut < sizeOut  ; ++kOut ) {
+
     // 1. bilinear grid interpolation with oversampling
-
-    // retrieve grid coordinates
-    // colOut = kOut % nbColsOut; // WDL 
-    // rowOut = kOut / nbColsOut;
-
-    // colGrid = colOut / oversampling; // WDL 
-    // rowGrid = rowOut / oversampling;
-
-    // get 4 involved pixels
-//     kGrid1 = colGrid + rowGrid * nbColsGrid;
-//     kGrid2 = (colGrid+1) + rowGrid * nbColsGrid;
-//     kGrid3 = (colGrid+1) + (rowGrid+1) * nbColsGrid;
-//     kGrid4 = colGrid + (rowGrid+1) * nbColsGrid;
-
-    // alpha factor to weight pixels 
-    // colAlpha = colOut % oversampling; // WDL 
-    // rowAlpha = rowOut % oversampling;
-
     // get column and row in source image
-    accurateColIn = gridVector[kGrid1] * (oversampling-colAlpha) * (oversampling-rowAlpha);
-    accurateColIn += gridVector[kGrid2] * colAlpha * (oversampling-rowAlpha);
-    accurateColIn += gridVector[kGrid3] * colAlpha * rowAlpha;
-    accurateColIn += gridVector[kGrid4] * (oversampling-colAlpha) * rowAlpha;
-    accurateColIn /= oversampling*oversampling;
+    double coef1 = (double)(os_colA * os_rowA);
+    double coef2 = (double)(colAlpha * os_rowA);
+    double coef3 = (double)(colAlpha * rowAlpha);
+    double coef4 = (double)(os_colA * rowAlpha);
+    // printf("\tos_calA:%ld, os_rowA:%ld\n", os_colA, os_rowA); // WDL DEBUG PRINT
+    // printf("\tCoef %.0lf, %.0lf, %.0lf, %.0lf,\n", coef1, coef2, coef3, coef4); // WDL DEBUG PRINT
 
-    accurateRowIn = gridVector[sizeGrid+kGrid1] * (oversampling-colAlpha) * (oversampling-rowAlpha);
-    accurateRowIn += gridVector[sizeGrid+kGrid2] * colAlpha * (oversampling-rowAlpha);
-    accurateRowIn += gridVector[sizeGrid+kGrid3] * colAlpha * rowAlpha;
-    accurateRowIn += gridVector[sizeGrid+kGrid4] * (oversampling-colAlpha) * rowAlpha;
-    accurateRowIn /= oversampling*oversampling;
+    accurateColIn = gridVector[kGrid1] * coef1;
+    accurateColIn += gridVector[kGrid2] * coef2;
+    accurateColIn += gridVector[kGrid3] * coef3;
+    accurateColIn += gridVector[kGrid4] * coef4;
+    accurateColIn /= osP2;
+
+    accurateRowIn = gridVector[sizeGrid+kGrid1] * coef1;
+    accurateRowIn += gridVector[sizeGrid+kGrid2] * coef2;
+    accurateRowIn += gridVector[sizeGrid+kGrid3] * coef3;
+    accurateRowIn += gridVector[sizeGrid+kGrid4] * coef4;
+    accurateRowIn /= osP2;
 
     // filter center
     accurateRowIn -= 0.5;
@@ -215,7 +208,11 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     filtering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
 	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
 
-    /** WDL Propal */
+    /**3. Increment for next call :
+      - grid coordinates
+      - 4 involved pixel
+      - alpha factor to weight pixels
+      */
     colAlpha++;
     if (colAlpha == oversampling) {
       colAlpha = 0;
@@ -240,8 +237,9 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
       kGrid2 = kGrid1 + 1;
       kGrid4 = kGrid1 + nbColsGrid;
       kGrid3 = kGrid4 + 1;
+      os_rowA = (oversampling - rowAlpha);
     }
-    /** END : WDL Propal */
+    os_colA = (oversampling - colAlpha);
   }
   
   return targetVector;
