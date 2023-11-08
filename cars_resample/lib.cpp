@@ -35,6 +35,13 @@ void nearestFiltering(const double accurateRowIn,
   }
 }
 
+inline double bicubicFilterWeightsCalcul1(double x) {
+  return x * x * (1.5 * x - 2.5) + 1;
+}
+inline double bicubicFilterWeightsCalcul2(double x) {
+  return x * (x * (-0.5 * x + 2.5) - 4) + 2;
+}
+
 std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
   // Compute bicubic filter weights
   // w[0]: -2, -1[, w[1]: [-1, 0[, w[2]: [0, 1[, w[3]: [1, 2[
@@ -42,18 +49,41 @@ std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
   //   = a|x|**3 -5a|x|**2 + 8a|x| -4a if 1 < |x| < 2
   // with a = -0.5
 
-  std::vector<double> weights(5);
   double x;
-  for (long int k=-2; k<=2; ++k) {
-    x = abs(relativeCoord + k);
-    if (x < 1) {
-      weights[k+2] = x * x * (1.5 * x - 2.5) + 1;    
-    }
-    else if (x < 2) {
-      weights[k+2] = x * (x * (-0.5 * x + 2.5) - 4) + 2;
-    }
-    else {
-      weights[k+2] = 0;
+  std::vector<double> weights(5);
+  // WDL unrool for loop : Normaly values are only between -0.5 & +0.5
+  if (relativeCoord < 0 && relativeCoord > -1) {
+    weights[0] = 0;
+    // - instead of abs because we know relativeCoord is negative
+    weights[1] = bicubicFilterWeightsCalcul2(-relativeCoord + 1);
+    weights[2] = bicubicFilterWeightsCalcul1(-relativeCoord);
+    weights[3] = bicubicFilterWeightsCalcul1(relativeCoord + 1);
+    weights[4] = bicubicFilterWeightsCalcul2(relativeCoord + 2);
+  } else if (relativeCoord == 0) {
+    weights[0] = 0;
+    weights[1] = bicubicFilterWeightsCalcul2(1);
+    weights[2] = 0;
+    weights[3] = bicubicFilterWeightsCalcul2(1);
+    weights[4] = 0;
+  } else if (relativeCoord > 0 && relativeCoord < 1) {
+    // - instead of abs because we know relativeCoord is negative
+    weights[0] = bicubicFilterWeightsCalcul2(-relativeCoord + 2);
+    weights[1] = bicubicFilterWeightsCalcul1(-relativeCoord + 1);
+    weights[2] = bicubicFilterWeightsCalcul1(relativeCoord);
+    weights[3] = bicubicFilterWeightsCalcul2(relativeCoord + 1);
+    weights[4] = 0;
+  } else { // keep old code in the other case (non regression of fct)
+    for (int k=-2; k<=2; ++k) {
+      x = abs(relativeCoord + k);
+      if (x < 1) {
+        weights[k+2] = bicubicFilterWeightsCalcul1(x);    
+      }
+      else if (x < 2) {
+        weights[k+2] = bicubicFilterWeightsCalcul2(x);
+      }
+      else {
+        weights[k+2] = 0;
+      }
     }
   }
 
@@ -83,6 +113,7 @@ void bicubicFiltering(const double accurateRowIn,
     relativeRow = accurateRowIn - filterCenterRow;
     relativeCol = accurateColIn - filterCenterCol;
     
+    // WDL : could never be < -0.5 & > 0.5
     auto weightsRow = computeBicubicFilterWeights(relativeRow);
     auto weightsCol = computeBicubicFilterWeights(relativeCol);
     
