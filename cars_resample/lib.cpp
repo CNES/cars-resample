@@ -152,10 +152,10 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
 
   double accurateRowIn, accurateColIn;
 
-  long int rowGrid, colGrid;
-  long int colAlpha, rowAlpha;
+  long int rowGrid = 0, colGrid = 0; // WDL Propal
+  long int colAlpha = 0, rowAlpha = 0; // WDL Propal
   long int kGrid1, kGrid2, kGrid3, kGrid4;
-  long int rowOut, colOut;
+  long int rowOut = 0, colOut = 0; // WDL Propal
 
   void (*filtering)(const double,
 		    const double,
@@ -174,7 +174,6 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
   else {
     filtering = &nearestFiltering;
   }
-  colOut = rowOut = 0; // WDL Propal
   for ( long int kOut = 0 ; kOut < sizeOut  ; ++kOut ) {
 
     // 1. bilinear grid interpolation with oversampling
@@ -183,8 +182,8 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     // colOut = kOut % nbColsOut; // WDL 
     // rowOut = kOut / nbColsOut;
 
-    colGrid = colOut / oversampling;
-    rowGrid = rowOut / oversampling;
+    // colGrid = colOut / oversampling; // WDL 
+    // rowGrid = rowOut / oversampling;
 
     // get 4 involved pixels
     kGrid1 = colGrid + rowGrid * nbColsGrid;
@@ -192,9 +191,9 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     kGrid3 = (colGrid+1) + (rowGrid+1) * nbColsGrid;
     kGrid4 = colGrid + (rowGrid+1) * nbColsGrid;
 
-    // alpha factor to weight pixels
-    colAlpha = colOut % oversampling;
-    rowAlpha = rowOut % oversampling;
+    // alpha factor to weight pixels 
+    // colAlpha = colOut % oversampling; // WDL 
+    // rowAlpha = rowOut % oversampling;
 
     // get column and row in source image
     accurateColIn = gridVector[kGrid1] * (oversampling-colAlpha) * (oversampling-rowAlpha);
@@ -218,11 +217,24 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
 	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
 
     /** WDL Propal */
+    colAlpha++;
+    if (colAlpha == oversampling) {
+      colAlpha = 0;
+      colGrid++;
+    }
     colOut++;
     if (colOut == nbColsOut) {
       colOut = 0;
       rowOut++;
+      colGrid = 0;
+      colAlpha = 0;
+      rowAlpha++;
+      if (rowAlpha == oversampling) {
+        rowAlpha = 0;
+        rowGrid++;
+      }
     }
+    /** END : WDL Propal */
   }
   
   return targetVector;
