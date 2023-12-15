@@ -13,7 +13,7 @@
 // pure C++ code
 // -------------
 
-void nearestFiltering(const double accurateRowIn,
+inline void nearestFiltering(const double accurateRowIn,
 		      const double accurateColIn,
 		      const long int nbRowsIn,
 		      const long int nbColsIn,
@@ -24,8 +24,8 @@ void nearestFiltering(const double accurateRowIn,
 		      const std::vector<double>& sourceVector,
 		      const long int sizeIn) {
 
-  long int filterCenterRow = floor(accurateRowIn+0.5);
-  long int filterCenterCol = floor(accurateColIn+0.5);
+  long int filterCenterRow = accurateRowIn;
+  long int filterCenterCol = accurateColIn;
   
   if (filterCenterRow >= 0 && filterCenterRow < nbRowsIn && filterCenterCol >= 0 && filterCenterCol < nbColsIn) {
     long int kIn = filterCenterRow * nbColsIn + filterCenterCol;
@@ -42,7 +42,7 @@ inline double bicubicFilterWeightsCalcul2(double x) {
   return x * (x * (-0.5 * x + 2.5) - 4) + 2;
 }
 
-std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
+inline std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
   // Compute bicubic filter weights
   // w[0]: -2, -1[, w[1]: [-1, 0[, w[2]: [0, 1[, w[3]: [1, 2[
   // w = (a+2)|x|**3 -(a+3)|x|**2 + 1  if |x| < 1
@@ -90,7 +90,7 @@ std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
   return weights;
 }
 
-void bicubicFiltering(const double accurateRowIn,
+inline void bicubicFiltering(const double accurateRowIn,
 		      const double accurateColIn,
 		      const long int nbRowsIn,
 		      const long int nbColsIn,
@@ -101,8 +101,8 @@ void bicubicFiltering(const double accurateRowIn,
 		      const std::vector<double>& sourceVector,
 		      const long int sizeIn) {
 
-  long int filterCenterRow = floor(accurateRowIn+0.5);
-  long int filterCenterCol = floor(accurateColIn+0.5);
+  long int filterCenterRow = accurateRowIn;
+  long int filterCenterCol = accurateColIn;
   long int rowIn, colIn;
 
   if (filterCenterRow >= 0 && filterCenterRow < nbRowsIn && filterCenterCol >= 0 && filterCenterCol < nbColsIn) {
@@ -110,10 +110,9 @@ void bicubicFiltering(const double accurateRowIn,
     double relativeRow, relativeCol;
 
     // relative greater or equal to 0 and lesser than 1
-    relativeRow = accurateRowIn - filterCenterRow;
-    relativeCol = accurateColIn - filterCenterCol;
-    
-    // WDL : could never be < -0.5 & > 0.5
+    relativeRow = accurateRowIn - 0.5 - filterCenterRow;
+    relativeCol = accurateColIn - 0.5 - filterCenterCol;
+
     auto weightsRow = computeBicubicFilterWeights(relativeRow);
     auto weightsCol = computeBicubicFilterWeights(relativeCol);
     
@@ -180,23 +179,9 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
   long os_colA = (oversampling - colAlpha);
   long os_rowA = (oversampling - rowAlpha);
 
-  void (*filtering)(const double,
-		    const double,
-		    const long int,
-		    const long int,
-		    const long int,
-		    std::vector<float>&,
-		    const long int,
-		    const long int,
-		    const std::vector<double>&,
-		    const long int);
 
-  if (interpolator == "bicubic") {
-    filtering = &bicubicFiltering;
-  }
-  else {
-    filtering = &nearestFiltering;
-  }
+  bool bc = (interpolator == "bicubic");
+
   for ( long int kOut = 0 ; kOut < sizeOut  ; ++kOut ) {
 
     // 1. bilinear grid interpolation with oversampling
@@ -220,13 +205,18 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     accurateRowIn += gridVector[sizeGrid+kGrid4] * coef4;
     accurateRowIn /= osP2;
 
+    // 2. filtering (nearest or bicubic)
+     if (bc) {
+    bicubicFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
+	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
+     }else{
+    nearestFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
+	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
+     }
+
     // filter center
     accurateRowIn -= 0.5;
     accurateColIn -= 0.5;
-
-    // 2. filtering (nearest or bicubic)
-    filtering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
-	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
 
     /**3. Increment for next call :
       - grid coordinates
