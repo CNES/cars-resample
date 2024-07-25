@@ -52,6 +52,7 @@ inline std::vector<double> computeBicubicFilterWeights(const double relativeCoor
   double x;
   std::vector<double> weights(5);
   // WDL unrool for loop : Normaly values are only between -0.5 & +0.5
+  // Specific case are coded separately to avoid useless function calls
   if (relativeCoord < 0 && relativeCoord > -1) {
     weights[0] = 0;
     // - instead of abs because we know relativeCoord is negative
@@ -60,10 +61,11 @@ inline std::vector<double> computeBicubicFilterWeights(const double relativeCoor
     weights[3] = bicubicFilterWeightsCalcul1(relativeCoord + 1);
     weights[4] = bicubicFilterWeightsCalcul2(relativeCoord + 2);
   } else if (relativeCoord == 0) {
+    // Center pixel: interpolation is identity
     weights[0] = 0;
-    weights[1] = bicubicFilterWeightsCalcul2(1);
-    weights[2] = 0;
-    weights[3] = bicubicFilterWeightsCalcul2(1);
+    weights[1] = 0;
+    weights[2] = 1;
+    weights[3] = 0;
     weights[4] = 0;
   } else if (relativeCoord > 0 && relativeCoord < 1) {
     // - instead of abs because we know relativeCoord is negative
@@ -72,11 +74,14 @@ inline std::vector<double> computeBicubicFilterWeights(const double relativeCoor
     weights[2] = bicubicFilterWeightsCalcul1(relativeCoord);
     weights[3] = bicubicFilterWeightsCalcul2(relativeCoord + 1);
     weights[4] = 0;
-  } else { // keep old code in the other case (non regression of fct)
+  } else { 
+    // Generic case, for any relativeCoord value. This will not be called for valid values of
+    // relativeCoord
+    // (this is the original code of this function)
     for (int k=-2; k<=2; ++k) {
       x = abs(relativeCoord + k);
       if (x < 1) {
-        weights[k+2] = bicubicFilterWeightsCalcul1(x);    
+        weights[k+2] = bicubicFilterWeightsCalcul1(x);
       }
       else if (x < 2) {
         weights[k+2] = bicubicFilterWeightsCalcul2(x);
