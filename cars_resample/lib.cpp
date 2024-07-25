@@ -169,7 +169,7 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
                                   const long int nbColsGrid,
                                   const long int nbBands,
                                   const long int oversampling,
-                                  const std::string interpolator,
+                                  const std::string& interpolator,
                                   const double nodata)
 {
   const long int nbRowsOut = (nbRowsGrid-1)*oversampling+1;
