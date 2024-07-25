@@ -24,8 +24,8 @@ inline void nearestFiltering(const double accurateRowIn,
 		      const std::vector<double>& sourceVector,
 		      const long int sizeIn) {
 
-  long int filterCenterRow = accurateRowIn;
-  long int filterCenterCol = accurateColIn;
+  long int filterCenterRow = static_cast<long int>(std::floor(accurateRowIn + 0.5));
+  long int filterCenterCol = static_cast<long int>(std::floor(accurateColIn + 0.5));
   
   if (filterCenterRow >= 0 && filterCenterRow < nbRowsIn && filterCenterCol >= 0 && filterCenterCol < nbColsIn) {
     long int kIn = filterCenterRow * nbColsIn + filterCenterCol;
@@ -101,8 +101,8 @@ inline void bicubicFiltering(const double accurateRowIn,
 		      const std::vector<double>& sourceVector,
 		      const long int sizeIn) {
 
-  long int filterCenterRow = accurateRowIn;
-  long int filterCenterCol = accurateColIn;
+  long int filterCenterRow = static_cast<long int>(std::floor(accurateRowIn + 0.5));
+  long int filterCenterCol = static_cast<long int>(std::floor(accurateColIn + 0.5));
   long int rowIn, colIn;
 
   if (filterCenterRow >= 0 && filterCenterRow < nbRowsIn && filterCenterCol >= 0 && filterCenterCol < nbColsIn) {
@@ -110,8 +110,8 @@ inline void bicubicFiltering(const double accurateRowIn,
     double relativeRow, relativeCol;
 
     // relative greater or equal to 0 and lesser than 1
-    relativeRow = accurateRowIn - 0.5 - filterCenterRow;
-    relativeCol = accurateColIn - 0.5 - filterCenterCol;
+    relativeRow = accurateRowIn - filterCenterRow;
+    relativeCol = accurateColIn - filterCenterCol;
 
     auto weightsRow = computeBicubicFilterWeights(relativeRow);
     auto weightsCol = computeBicubicFilterWeights(relativeCol);
@@ -205,6 +205,10 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     accurateRowIn += gridVector[sizeGrid+kGrid4] * coef4;
     accurateRowIn /= osP2;
 
+    // filter center
+    accurateRowIn -= 0.5;
+    accurateColIn -= 0.5;
+
     // 2. filtering (nearest or bicubic)
      if (bc) {
     bicubicFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
@@ -213,11 +217,6 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     nearestFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
 	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
      }
-
-    // filter center
-    accurateRowIn -= 0.5;
-    accurateColIn -= 0.5;
-
     /**3. Increment for next call :
       - grid coordinates
       - 4 involved pixel
