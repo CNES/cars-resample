@@ -120,6 +120,7 @@ inline void bicubicFiltering(const double accurateRowIn,
     
     // interpolation along row direction : input 5x5 => output 5x1
     for (long int b = 0; b < nbBands; ++b) {
+      double outputValue = 0.;
       for ( int neighRowIn = -2; neighRowIn <= 2; ++neighRowIn ) {
         rowIn = filterCenterRow + neighRowIn;
 
@@ -142,9 +143,9 @@ inline void bicubicFiltering(const double accurateRowIn,
         }
 
         // interpolation along col direction : input 5x1 => output 1x1
-        targetVector[kOut + b * sizeOut] +=
-            weightsRow[2 - neighRowIn] * interpCol[(neighRowIn + 2) + b * 5];
+        outputValue += weightsRow[2 - neighRowIn] * interpCol[(neighRowIn + 2) + b * 5];
       }
+      targetVector[kOut + b * sizeOut] = outputValue;
     }
   }
 }
