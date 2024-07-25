@@ -14,16 +14,16 @@
 // -------------
 
 inline void nearestFiltering(const double accurateRowIn,
-		      const double accurateColIn,
-		      const long int nbRowsIn,
-		      const long int nbColsIn,
-		      const long int nbBands,
-		      std::vector<float>& targetVector,
-		      const long int kOut,
-		      const long int sizeOut,
-		      const std::vector<double>& sourceVector,
-		      const long int sizeIn) {
-
+                              const double accurateColIn,
+                              const long int nbRowsIn,
+                              const long int nbColsIn,
+                              const long int nbBands,
+                              std::vector<float>& targetVector,
+                              const long int kOut,
+                              const long int sizeOut,
+                              const std::vector<double>& sourceVector,
+                              const long int sizeIn)
+{
   long int filterCenterRow = static_cast<long int>(std::floor(accurateRowIn + 0.5));
   long int filterCenterCol = static_cast<long int>(std::floor(accurateColIn + 0.5));
   
@@ -35,14 +35,18 @@ inline void nearestFiltering(const double accurateRowIn,
   }
 }
 
-inline double bicubicFilterWeightsCalcul1(double x) {
+inline double bicubicFilterWeightsCalcul1(double x)
+{
   return x * x * (1.5 * x - 2.5) + 1;
 }
-inline double bicubicFilterWeightsCalcul2(double x) {
+
+inline double bicubicFilterWeightsCalcul2(double x)
+{
   return x * (x * (-0.5 * x + 2.5) - 4) + 2;
 }
 
-inline std::vector<double> computeBicubicFilterWeights(const double relativeCoord) {
+inline std::vector<double> computeBicubicFilterWeights(const double relativeCoord)
+{
   // Compute bicubic filter weights
   // w[0]: -2, -1[, w[1]: [-1, 0[, w[2]: [0, 1[, w[3]: [1, 2[
   // w = (a+2)|x|**3 -(a+3)|x|**2 + 1  if |x| < 1
@@ -96,15 +100,16 @@ inline std::vector<double> computeBicubicFilterWeights(const double relativeCoor
 }
 
 inline void bicubicFiltering(const double accurateRowIn,
-		      const double accurateColIn,
-		      const long int nbRowsIn,
-		      const long int nbColsIn,
-		      const long int nbBands,
-		      std::vector<float>& targetVector,
-		      const long int kOut,
-		      const long int sizeOut,
-		      const std::vector<double>& sourceVector,
-		      const long int sizeIn) {
+                              const double accurateColIn,
+                              const long int nbRowsIn,
+                              const long int nbColsIn,
+                              const long int nbBands,
+                              std::vector<float>& targetVector,
+                              const long int kOut,
+                              const long int sizeOut,
+                              const std::vector<double>& sourceVector,
+                              const long int sizeIn)
+{
 
   long int filterCenterRow = static_cast<long int>(std::floor(accurateRowIn + 0.5));
   long int filterCenterCol = static_cast<long int>(std::floor(accurateColIn + 0.5));
@@ -135,7 +140,7 @@ inline void bicubicFiltering(const double accurateRowIn,
         rowIn = (rowIn >= nbRowsIn) ? nbRowsIn - 1 : rowIn;
 
         for ( int neighColIn = -2; neighColIn <= 2; ++neighColIn ) {
-  	  colIn = filterCenterCol + neighColIn;
+          colIn = filterCenterCol + neighColIn;
 
           // mirror: colIn = -colIn + 1;
           colIn = (colIn < 0) ? 0 : colIn;
@@ -157,15 +162,15 @@ inline void bicubicFiltering(const double accurateRowIn,
 
 
 std::vector<float> gridResampling(const std::vector<double>& sourceVector,
-				  const std::vector<double>& gridVector,
-				  const long int nbRowsIn,
-				  const long int nbColsIn,
-				  const long int nbRowsGrid,
-				  const long int nbColsGrid,
-				  const long int nbBands,
-				  const long int oversampling,
-				  const std::string interpolator,
-				  const double nodata)
+                                  const std::vector<double>& gridVector,
+                                  const long int nbRowsIn,
+                                  const long int nbColsIn,
+                                  const long int nbRowsGrid,
+                                  const long int nbColsGrid,
+                                  const long int nbBands,
+                                  const long int oversampling,
+                                  const std::string interpolator,
+                                  const double nodata)
 {
   const long int nbRowsOut = (nbRowsGrid-1)*oversampling+1;
   const long int nbColsOut = (nbColsGrid-1)*oversampling+1;
@@ -196,8 +201,6 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     double coef2 = (double)(colAlpha * os_rowA);
     double coef3 = (double)(colAlpha * rowAlpha);
     double coef4 = (double)(os_colA * rowAlpha);
-    // printf("\tos_calA:%ld, os_rowA:%ld\n", os_colA, os_rowA); // WDL DEBUG PRINT
-    // printf("\tCoef %.0lf, %.0lf, %.0lf, %.0lf,\n", coef1, coef2, coef3, coef4); // WDL DEBUG PRINT
 
     accurateColIn = gridVector[kGrid1] * coef1;
     accurateColIn += gridVector[kGrid2] * coef2;
@@ -218,16 +221,16 @@ std::vector<float> gridResampling(const std::vector<double>& sourceVector,
     // 2. filtering (nearest or bicubic)
      if (bc) {
     bicubicFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
-	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
-     }else{
+        nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
+     } else{
     nearestFiltering(accurateRowIn, accurateColIn, nbRowsIn, nbColsIn,
-	      nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
+        nbBands, targetVector, kOut, sizeOut, sourceVector, sizeIn);
      }
-    /**3. Increment for next call :
-      - grid coordinates
-      - 4 involved pixel
-      - alpha factor to weight pixels
-      */
+
+    // 3. Increment for next call :
+    //  - grid coordinates
+    //  - 4 involved pixel
+    //  - alpha factor to weight pixels
     colAlpha++;
     if (colAlpha == oversampling) {
       colAlpha = 0;
@@ -268,12 +271,12 @@ namespace py = pybind11;
 
 // wrap C++ function with NumPy array IO
 py::array pyGrid(py::array_t<double,
-		 py::array::c_style | py::array::forcecast> source,
-		 py::array_t<double,
-		 py::array::c_style | py::array::forcecast> grid,
-		 size_t oversampling,
-		 std::string interpolator,
-		 double nodata)
+     py::array::c_style | py::array::forcecast> source,
+     py::array_t<double,
+     py::array::c_style | py::array::forcecast> grid,
+     size_t oversampling,
+     std::string interpolator,
+     double nodata)
 {
   // check input dimensions
   if ( source.ndim()     != 3 )
@@ -313,31 +316,31 @@ py::array pyGrid(py::array_t<double,
 
   // call pure C++ function
   auto tgtVector = gridResampling(sourceVector,
-				  gridVector,
-				  nbRowsIn,
-				  nbColsIn,
-				  nbRowsGrid,
-				  nbColsGrid,
-				  nbBands,
-				  oversampling,
-				  interpolator,
-				  nodata);
+          gridVector,
+          nbRowsIn,
+          nbColsIn,
+          nbRowsGrid,
+          nbColsGrid,
+          nbBands,
+          oversampling,
+          interpolator,
+          nodata);
 
   size_t              ndim    = 3;
   std::vector<size_t> shape   = { nbBands, nbRowsOut, nbColsOut };
   std::vector<size_t> strides = { nbRowsOut*nbColsOut*sizeof(float),
-				  nbColsOut*sizeof(float),
-				  sizeof(float)};
+          nbColsOut*sizeof(float),
+          sizeof(float)};
   
   // return 2-D NumPy array, I think here it is ok since the expected argument is
   // a pointer so there is no copy
   return py::array(py::buffer_info(tgtVector.data(),
-				   sizeof(float), 
-				   py::format_descriptor<float>::format(),
-				   ndim,
-				   shape,
-				   strides
-				   ));
+           sizeof(float), 
+           py::format_descriptor<float>::format(),
+           ndim,
+           shape,
+           strides
+           ));
 }
 
 // wrap as Python module
@@ -346,9 +349,9 @@ PYBIND11_MODULE(resample, m)
   m.doc() = "resample";
 
   m.def("grid", &pyGrid, "Resampled a source image to a target image according a resampling grid",
-	py::arg("source"),
-	py::arg("grid"),
-	py::arg("oversampling"),
-	py::arg("interpolator"),
-	py::arg("nodata"));
+  py::arg("source"),
+  py::arg("grid"),
+  py::arg("oversampling"),
+  py::arg("interpolator"),
+  py::arg("nodata"));
 }
