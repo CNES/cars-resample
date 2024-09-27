@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 Optimization by WeDoLow with no change in results (September 2023)
+## 0.1.1 Optimization by WeDoLow with no change in results (September 2024)
 
 ### Optimized
 
